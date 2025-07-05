@@ -105,5 +105,6 @@ class InceptionCNN:
                         hEnd = hStart + poolSize
                         wStart = w * stride
                         wEnd = wStart + poolSize
-                        output[b, c, h, w] = np.max(inputData[b, c, hStart:hEnd, wStart:wEnd])
+                        inputSlice = inputData[b, c, hStart:hEnd, wStart:wEnd]
+                        output[b, c, h, w] = np.max(inputSlice)
         return output
