@@ -55,8 +55,8 @@ class InceptionCNN:
         self.fc_bias = np.zeros((fc_output_size,))
     
     def pad_input(self, inputData, padding):
-        batch_size, channels, height, width = inputData.shape
-        padded = np.zeros((batch_size, channels, height + 2*padding, width + 2*padding))
+        batchSize, channels, height, width = inputData.shape
+        padded = np.zeros((batchSize, channels, height + 2*padding, width + 2*padding))
         padded[:, :, padding:height+padding, padding:width+padding] = input_data
         return padded
     
@@ -64,15 +64,15 @@ class InceptionCNN:
         if padding > 0:
             inputData = self.pad_input(inputData, padding)
 
-        batch_size, inChannels, inHeight, inWidth = inputData.shape
+        batchSize, inChannels, inHeight, inWidth = inputData.shape
         outChannels, _, filterHeight, filterWidth = weights.shape
 
         outHeight = int((inHeight - filterHeight) / stride) + 1
         outWidth = int((inWidth - filterWidth) / stride) + 1
 
-        output = np.zeros((batch_size, outChannels, outHeight, outWidth))
+        output = np.zeros((batchSize, outChannels, outHeight, outWidth))
 
-        for b in range(batch_size):
+        for b in range(batchSize):
             for c in range(outChannels):
                 for h in range(outHeight):
                     for w in range(outWidth):
@@ -91,13 +91,13 @@ class InceptionCNN:
         if padding > 0:
             inputData = self.pad_input(inputData, padding)
 
-        batch_size, channels, inHeight, inWidth = inputData.shape
+        batchSize, channels, inHeight, inWidth = inputData.shape
         outHeight = int((inHeight - poolSize) / stride) + 1
         outWidth = int((inWidth - poolSize) / stride) + 1
 
-        output = np.zeros((batch_size, channels, outHeight, outWidth))
+        output = np.zeros((batchSize, channels, outHeight, outWidth))
 
-        for b in range(batch_size):
+        for b in range(batchSize):
             for c in range(channels):
                 for h in range(outHeight):
                     for w in range(outWidth):
@@ -108,3 +108,33 @@ class InceptionCNN:
                         inputSlice = inputData[b, c, hStart:hEnd, wStart:wEnd]
                         output[b, c, h, w] = np.max(inputSlice)
         return output
+
+    def inception_block(self, inputData):
+        # 1x1 convolution
+        conv1x1 = self.conv2d(inputData, self.conv1x1_weights, self.conv1x1_bias)
+        conv1x1 = self.relu(conv1x1)
+
+        # 3x3 convolution
+        conv3x3 = self.conv2d(inputData, self.conv1x1_3x3_weights, self.conv1x1_3x3_bias)
+        conv3x3 = self.relu(conv3x3)
+        padding = int((3 - 1) / 2)#same padding
+        conv3x3 = self.conv2d(conv3x3, self.conv3x3_weights, self.conv3x3_bias, padding)
+        conv3x3 = self.relu(conv3x3)
+
+        # 5x5 convolution
+        conv5x5 = self.conv2d(inputData, self.conv1x1_5x5_weights, self.conv1x1_5x5_bias)
+        conv5x5 = self.relu(conv5x5)
+        padding = int((5 - 1) / 2)
+        conv5x5 = self.conv2d(conv5x5, self.conv5x5_weights, self.conv5x5_bias, padding)
+        conv5x5 = self.relu(conv5x5)
+
+        # pooling
+        padding = int((3 - 1) / 2)
+        pool = self.max_pool2d(inputData, poolSize=3, stride=1, padding)
+        pool = self.conv2d(pool, self.conv1x1_pool_weights, self.conv1x1_pool_bias)
+        pool = self.relu(pool)
+
+        output = np.concatenate((conv1x1, conv3x3, conv5x5, pool), axis=1)
+        return output
+
+                    
