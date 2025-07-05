@@ -136,5 +136,36 @@ class InceptionCNN:
 
         output = np.concatenate((conv1x1, conv3x3, conv5x5, pool), axis=1)
         return output
+    
+    def softmax(self, x):
+        exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+        return exp_x / np.sum(exp_x, axis=1, keepdims=True)
+    
+    def forward(self, inputData):
+        inputData = self.inception_block(inputData)
 
+        batchSize, channels, height, width = inputData.shape
+        inputData = inputData.reshape(batchSize, -1)
+
+        inputData = np.dot(inputData, self.fc_weights.T) + self.fc_bias
+        inputData = self.relu(inputData)
+
+        output = self.softmax(inputData)
+        return output
+
+    def cross_entropy_loss(self, predictions, labels):
+        batchSize = predictions.shape[0]
+        
+        epsilon = 1e-12 
+        predictions = np.clip(predictions, epsilon, 1. - epsilon)
+
+        loss = -np.sum(labels * np.log(predictions)) / batchSize
+        return loss
+
+    def accuracy(self, predictions, labels):
+        predicted_classes = np.argmax(predictions, axis=1)
+        true_classes = np.argmax(labels, axis=1)
+        accuracy = np.mean(predicted_classes == true_classes)
+        return accuracy
+    
                     
