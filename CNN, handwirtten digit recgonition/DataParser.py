@@ -1,6 +1,5 @@
 import csv
 import numpy as np
-import matplotlib.pyplot as plt
 
 class MNISTDataParser:
     def __init__(self, train_path, test_path):
