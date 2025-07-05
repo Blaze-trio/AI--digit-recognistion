@@ -46,11 +46,64 @@ class InceptionCNN:
         self.conv1x1_pool_weights = self.xavier_uniform(fan_in, fan_out, (32, self.input_channels, 1, 1))
         self.conv1x1_pool_bias = np.zeros((32,))
 
+        # fully connected layer
         fc_input_size = 128 * 28 * 28 
         fc_output_size = self.num_classes
 
         fan_in, fan_out = fc_input_size, fc_output_size
         self.fc_weights = self.xavier_uniform(fan_in, fan_out, (fc_output_size, fc_input_size))
         self.fc_bias = np.zeros((fc_output_size,))
-
     
+    def pad_input(self, inputData, padding):
+        batch_size, channels, height, width = inputData.shape
+        padded = np.zeros((batch_size, channels, height + 2*padding, width + 2*padding))
+        padded[:, :, padding:height+padding, padding:width+padding] = input_data
+        return padded
+    
+    def conv2d(self, inputData, weights, bias, stride=1, padding=0):
+        if padding > 0:
+            inputData = self.pad_input(inputData, padding)
+
+        batch_size, inChannels, inHeight, inWidth = inputData.shape
+        outChannels, _, filterHeight, filterWidth = weights.shape
+
+        outHeight = int((inHeight - filterHeight) / stride) + 1
+        outWidth = int((inWidth - filterWidth) / stride) + 1
+
+        output = np.zeros((batch_size, outChannels, outHeight, outWidth))
+
+        for b in range(batch_size):
+            for c in range(outChannels):
+                for h in range(outHeight):
+                    for w in range(outWidth):
+                        hStart = h * stride
+                        hEnd = hStart + filterHeight
+                        wStart = w * stride
+                        wEnd = wStart + filterWidth
+                        inputSlice = inputData[b, :, hStart:hEnd, wStart:wEnd]
+                        output[b, c, h, w] = np.sum(inputSlice * weights[c]) + bias[c]
+        return output
+
+    def relu(self, x):
+        return np.maximum(0, x)
+    
+    def max_pool2d(self, inputData, poolSize=2, stride=2, padding=0):
+        if padding > 0:
+            inputData = self.pad_input(inputData, padding)
+
+        batch_size, channels, inHeight, inWidth = inputData.shape
+        outHeight = int((inHeight - poolSize) / stride) + 1
+        outWidth = int((inWidth - poolSize) / stride) + 1
+
+        output = np.zeros((batch_size, channels, outHeight, outWidth))
+
+        for b in range(batch_size):
+            for c in range(channels):
+                for h in range(outHeight):
+                    for w in range(outWidth):
+                        hStart = h * stride
+                        hEnd = hStart + poolSize
+                        wStart = w * stride
+                        wEnd = wStart + poolSize
+                        output[b, c, h, w] = np.max(inputData[b, c, hStart:hEnd, wStart:wEnd])
+        return output
