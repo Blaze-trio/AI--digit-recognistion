@@ -59,8 +59,8 @@ def main():
     cnn = InceptionCNN(input_channels=1, num_classes=10)
 
     #hyperparameters
-    batch_size = 64
-    num_epochs = 10
+    batch_size = 32
+    num_epochs = 3
     learning_rate = 0.001
 
     training_history = {
@@ -85,12 +85,10 @@ def main():
 
         total_batches = len(train_data_shuffled) // batch_size
         
-        batch_progress = tqdm(range(0, len(train_data_shuffled), batch_size), 
-                             desc=f"Epoch {epoch + 1}", 
-                             total=total_batches,
-                             unit="batch")
+        batch_indices = list(range(0, len(train_data_shuffled), batch_size))
+        batch_progress = tqdm(batch_indices, desc=f"Epoch {epoch + 1}", total=total_batches, unit="batch")
 
-        for batch_start in range(0,len(train_data_shuffled), batch_size):
+        for batch_start in batch_indices:
             print(f"Processing batch starting at index {batch_start}...")
             batch_end = min(batch_start + batch_size, len(train_data_shuffled))
             batch_data = train_data_shuffled[batch_start:batch_end]
@@ -108,7 +106,8 @@ def main():
             # Update progress bar
             batch_progress.set_postfix({
                 'Loss': f'{loss:.4f}',
-                'Acc': f'{acc:.4f}'
+                'Acc': f'{acc:.4f}',
+                'Batch': f'{num_batches}'
             })
 
         avg_loss = epoch_loss / num_batches
@@ -128,6 +127,7 @@ def main():
     #Save the trained model
     model_path = "trained_inception_cnn.pkl"
     save_model(cnn, model_path)
+    
     with open("training_history.pkl", 'wb') as f:
         pickle.dump(training_history, f)
     print("Training history saved to training_history.pkl")

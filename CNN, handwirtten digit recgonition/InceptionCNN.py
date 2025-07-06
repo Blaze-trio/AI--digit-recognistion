@@ -57,14 +57,12 @@ class InceptionCNN:
         self.fc_bias = np.zeros((fc_output_size,))
     
     def pad_input(self, inputData, padding):
-        print("\npad_input")
         batchSize, channels, height, width = inputData.shape
         padded = np.zeros((batchSize, channels, height + 2*padding, width + 2*padding))
         padded[:, :, padding:height+padding, padding:width+padding] = inputData
         return padded
     
     def conv2d(self, inputData, weights, bias, stride=1, padding=0):
-        print("\nconv2d")
         if padding > 0:
             inputData = self.pad_input(inputData, padding)
 
@@ -92,7 +90,6 @@ class InceptionCNN:
         return np.maximum(0, x)
     
     def max_pool2d(self, inputData, poolSize=2, stride=2, padding=0):
-        print("\nmax_pool2d")
         if padding > 0:
             inputData = self.pad_input(inputData, padding)
 
@@ -115,7 +112,6 @@ class InceptionCNN:
         return output
 
     def inception_block(self, inputData):
-        print("\ninception_block")
         # 1x1 convolution
         conv1x1 = self.conv2d(inputData, self.conv1x1_weights, self.conv1x1_bias)
         conv1x1 = self.relu(conv1x1)
@@ -144,12 +140,10 @@ class InceptionCNN:
         return output
     
     def softmax(self, x):
-        print("\nsoftmax")
         exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
         return exp_x / np.sum(exp_x, axis=1, keepdims=True)
     
     def forward(self, inputData):
-        print("\nforward")
         inputData = self.inception_block(inputData)
 
         batchSize, channels, height, width = inputData.shape
@@ -162,7 +156,6 @@ class InceptionCNN:
         return output
 
     def cross_entropy_loss(self, predictions, labels):
-        print("\ncross_entropy_loss")
         batchSize = predictions.shape[0]
         
         epsilon = 1e-12 
@@ -172,7 +165,6 @@ class InceptionCNN:
         return loss
 
     def accuracy(self, predictions, labels):
-        print("\naccuracy")
         predicted_classes = np.argmax(predictions, axis=1)
         true_classes = np.argmax(labels, axis=1)
         accuracy = np.mean(predicted_classes == true_classes)
@@ -222,5 +214,5 @@ class InceptionCNN:
         confidence = np.max(prediction, axis=1)[0]
         
         return predicted_digit, confidence, prediction[0]
-    
-                    
+
+
