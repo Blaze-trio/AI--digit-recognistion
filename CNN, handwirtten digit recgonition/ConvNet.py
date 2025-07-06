@@ -86,24 +86,21 @@ def main():
         total_batches = len(train_data_shuffled) // batch_size
         
         batch_indices = list(range(0, len(train_data_shuffled), batch_size))
-        batch_progress = tqdm(batch_indices, desc=f"Epoch {epoch + 1}", total=total_batches, unit="batch")
+        batch_progress = tqdm(batch_indices, desc=f"Epoch {epoch + 1}", total=total_batches, unit="batch", leave=False)
 
-        for batch_start in batch_indices:
+        for batch_start in batch_progress:
             print(f"Processing batch starting at index {batch_start}...")
             batch_end = min(batch_start + batch_size, len(train_data_shuffled))
             batch_data = train_data_shuffled[batch_start:batch_end]
             batch_one_hot = train_labels_one_hot[batch_start:batch_end]
 
-            prediction = cnn.forward(batch_data)
-
-            loss = cnn.cross_entropy_loss(prediction, batch_one_hot)
-            acc = cnn.accuracy(prediction, batch_one_hot)
-
+            loss, acc = cnn.train_step(batch_data, batch_one_hot, learning_rate)
+            
             epoch_loss += loss
             epoch_accuracy += acc
             num_batches += 1
 
-            # Update progress bar
+            #Update progress bar
             batch_progress.set_postfix({
                 'Loss': f'{loss:.4f}',
                 'Acc': f'{acc:.4f}',
@@ -127,7 +124,7 @@ def main():
     #Save the trained model
     model_path = "trained_inception_cnn.pkl"
     save_model(cnn, model_path)
-    
+
     with open("training_history.pkl", 'wb') as f:
         pickle.dump(training_history, f)
     print("Training history saved to training_history.pkl")
