@@ -131,20 +131,20 @@ class InceptionCNN:
         self.cache['conv1x1'] = conv1x1.copy()
 
         # 3x3 convolution
-        conv3x3 = self.conv2d(inputData, self.conv1x1_3x3_weights, self.conv1x1_3x3_bias)
-        conv3x3 = self.relu(conv3x3)
+        conv1x1_3x3 = self.conv2d(inputData, self.conv1x1_3x3_weights, self.conv1x1_3x3_bias)
+        conv1x1_3x3 = self.relu(conv1x1_3x3)
         self.cache['conv1x1_3x3'] = conv1x1_3x3.copy()
         padding = int((3 - 1) / 2)#same padding
-        conv3x3 = self.conv2d(conv3x3, self.conv3x3_weights, self.conv3x3_bias, padding=1)
+        conv3x3 = self.conv2d(conv1x1_3x3, self.conv3x3_weights, self.conv3x3_bias, padding=1)
         conv3x3 = self.relu(conv3x3)
         self.cache['conv3x3'] = conv3x3.copy()
 
         # 5x5 convolution
-        conv5x5 = self.conv2d(inputData, self.conv1x1_5x5_weights, self.conv1x1_5x5_bias)
-        conv5x5 = self.relu(conv5x5)
-        self.cache['conv1x1_5x5'] = conv5x5.copy()
+        conv1x1_5x5 = self.conv2d(inputData, self.conv1x1_5x5_weights, self.conv1x1_5x5_bias)
+        conv1x1_5x5 = self.relu(conv1x1_5x5)
+        self.cache['conv1x1_5x5'] = conv1x1_5x5.copy()
         padding = int((5 - 1) / 2)
-        conv5x5 = self.conv2d(conv5x5, self.conv5x5_weights, self.conv5x5_bias, padding=2)
+        conv5x5 = self.conv2d(conv1x1_5x5, self.conv5x5_weights, self.conv5x5_bias, padding=2)
         conv5x5 = self.relu(conv5x5)
         self.cache['conv5x5'] = conv5x5.copy()
 
