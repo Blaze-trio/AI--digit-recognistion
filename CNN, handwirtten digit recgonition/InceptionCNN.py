@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 
 class InceptionCNN:
     def __init__(self, input_channels=1, num_classes=10):
@@ -176,5 +177,50 @@ class InceptionCNN:
         true_classes = np.argmax(labels, axis=1)
         accuracy = np.mean(predicted_classes == true_classes)
         return accuracy
+    
+    @classmethod
+    def load_model(cls, filepath):
+        with open(filepath, 'rb') as f:
+            model_data = pickle.load(f)
+        
+        #Create new instance
+        model = cls(
+            input_channels=model_data['input_channels'],
+            num_classes=model_data['num_classes']
+        )
+        
+        #Load weights
+        model.conv1x1_weights = model_data['conv1x1_weights']
+        model.conv1x1_bias = model_data['conv1x1_bias']
+        model.conv1x1_3x3_weights = model_data['conv1x1_3x3_weights']
+        model.conv1x1_3x3_bias = model_data['conv1x1_3x3_bias']
+        model.conv3x3_weights = model_data['conv3x3_weights']
+        model.conv3x3_bias = model_data['conv3x3_bias']
+        model.conv1x1_5x5_weights = model_data['conv1x1_5x5_weights']
+        model.conv1x1_5x5_bias = model_data['conv1x1_5x5_bias']
+        model.conv5x5_weights = model_data['conv5x5_weights']
+        model.conv5x5_bias = model_data['conv5x5_bias']
+        model.conv1x1_pool_weights = model_data['conv1x1_pool_weights']
+        model.conv1x1_pool_bias = model_data['conv1x1_pool_bias']
+        model.fc_weights = model_data['fc_weights']
+        model.fc_bias = model_data['fc_bias']
+        
+        print(f"Model loaded from {filepath}")
+        return model
+    
+    def predict_single(self, image):
+
+        if len(image.shape) == 2:  # (28, 28)
+            image = image.reshape(1, 1, 28, 28)
+        elif len(image.shape) == 3:  # (1, 28, 28)
+            image = image.reshape(1, 1, 28, 28)
+        
+        old_print_state = {}
+        
+        prediction = self.forward(image)
+        predicted_digit = np.argmax(prediction, axis=1)[0]
+        confidence = np.max(prediction, axis=1)[0]
+        
+        return predicted_digit, confidence, prediction[0]
     
                     
