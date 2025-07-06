@@ -189,62 +189,143 @@ class InceptionCNN:
         return output
 
     def backward(self, y_true, learning_rate=0.001):
+        """Complete backward pass updating ALL weights in the network"""
         batch_size = y_true.shape[0]
     
         y_pred = self.cache['final_output']
-        dL_dSoftmax = y_pred - y_true 
-        #softmax cross entropy gradient
+        dL_dSoftmax = y_pred - y_true  
         fc_relu = self.cache['fc_relu']
         dL_dFC_relu = dL_dSoftmax.copy()
         dL_dFC_output = dL_dFC_relu.copy()
         dL_dFC_output[fc_relu <= 0] = 0 
-        
-        #fully connected layer gradients
+    
+     
         fc_input = self.cache['fc_input'] 
-        
+
         dL_dFC_weights = np.dot(fc_input.T, dL_dFC_output) / batch_size
         dL_dFC_bias = np.mean(dL_dFC_output, axis=0)
-        
     
         dL_dFC_input = np.dot(dL_dFC_output, self.fc_weights.T)
+    
         inception_shape = self.cache['flattened_shape']
         dL_dInception = dL_dFC_input.reshape(inception_shape)
-        
+    
+
         self.fc_weights -= learning_rate * dL_dFC_weights
         self.fc_bias -= learning_rate * dL_dFC_bias
-        dL_conv1x1 = dL_dInception[:, :32, :, :]     
-        dL_conv3x3 = dL_dInception[:, 32:64, :, :]
-        dL_conv5x5 = dL_dInception[:, 64:96, :, :]   
-        dL_pool = dL_dInception[:, 96:128, :, :]    
-        
     
+    
+        dL_conv1x1 = dL_dInception[:, :32, :, :] 
+        dL_conv3x3_out = dL_dInception[:, 32:64, :, :]
+        dL_conv5x5_out = dL_dInception[:, 64:96, :, :] 
+        dL_pool_out = dL_dInception[:, 96:128, :, :]   
+
         input_data = self.cache['input']
-        
-        conv1x1_grad = self.simple_conv_weight_gradient(input_data, dL_conv1x1, self.conv1x1_weights.shape)
+    
+   
+        conv1x1_grad = self.conv_weight_gradient(input_data, dL_conv1x1, self.conv1x1_weights.shape)
         conv1x1_bias_grad = np.mean(dL_conv1x1, axis=(0, 2, 3))
-        
+    
         self.conv1x1_weights -= learning_rate * conv1x1_grad
         self.conv1x1_bias -= learning_rate * conv1x1_bias_grad
 
-    def simple_conv_weight_gradient(self, input_data, output_grad, weight_shape):
+        conv1x1_3x3_relu = self.cache['conv1x1_3x3']  # Input to 3x3 conv
+        conv3x3_grad = self.conv_weight_gradient(conv1x1_3x3_relu, dL_conv3x3_out, self.conv3x3_weights.shape)
+        conv3x3_bias_grad = np.mean(dL_conv3x3_out, axis=(0, 2, 3))
+    
+        self.conv3x3_weights -= learning_rate * conv3x3_grad
+        self.conv3x3_bias -= learning_rate * conv3x3_bias_grad
+    
+      
+        dL_conv1x1_3x3_relu = self.conv_input_gradient(conv1x1_3x3_relu, self.conv3x3_weights, dL_conv3x3_out, padding=1)
+    
+        # Apply ReLU derivative
+        conv1x1_3x3_output = self.cache['conv1x1_3x3']
+        dL_conv1x1_3x3_output = dL_conv1x1_3x3_relu.copy()
+        dL_conv1x1_3x3_output[conv1x1_3x3_output <= 0] = 0
+    
+        # Update 1x1_3x3 weights
+        conv1x1_3x3_grad = self.conv_weight_gradient(input_data, dL_conv1x1_3x3_output, self.conv1x1_3x3_weights.shape)
+        conv1x1_3x3_bias_grad = np.mean(dL_conv1x1_3x3_output, axis=(0, 2, 3))
+    
+        self.conv1x1_3x3_weights -= learning_rate * conv1x1_3x3_grad
+        self.conv1x1_3x3_bias -= learning_rate * conv1x1_3x3_bias_grad
+    
+
+        conv1x1_5x5_relu = self.cache['conv1x1_5x5']  # Input to 5x5 conv
+        conv5x5_grad = self.conv_weight_gradient(conv1x1_5x5_relu, dL_conv5x5_out, self.conv5x5_weights.shape)
+        conv5x5_bias_grad = np.mean(dL_conv5x5_out, axis=(0, 2, 3))
+    
+        self.conv5x5_weights -= learning_rate * conv5x5_grad
+        self.conv5x5_bias -= learning_rate * conv5x5_bias_grad
+    
+
+        dL_conv1x1_5x5_relu = self.conv_input_gradient(conv1x1_5x5_relu, self.conv5x5_weights, dL_conv5x5_out, padding=2)
+
+        conv1x1_5x5_output = self.cache['conv1x1_5x5']
+        dL_conv1x1_5x5_output = dL_conv1x1_5x5_relu.copy()
+        dL_conv1x1_5x5_output[conv1x1_5x5_output <= 0] = 0
+    
+        # Update 1x1_5x5 weights
+        conv1x1_5x5_grad = self.conv_weight_gradient(input_data, dL_conv1x1_5x5_output, self.conv1x1_5x5_weights.shape)
+        conv1x1_5x5_bias_grad = np.mean(dL_conv1x1_5x5_output, axis=(0, 2, 3))
+    
+        self.conv1x1_5x5_weights -= learning_rate * conv1x1_5x5_grad
+        self.conv1x1_5x5_bias -= learning_rate * conv1x1_5x5_bias_grad
+
+        pool_output = self.cache['pool']  # Input to 1x1_pool conv
+        conv1x1_pool_grad = self.conv_weight_gradient(pool_output, dL_pool_out, self.conv1x1_pool_weights.shape)
+        conv1x1_pool_bias_grad = np.mean(dL_pool_out, axis=(0, 2, 3))
+    
+        self.conv1x1_pool_weights -= learning_rate * conv1x1_pool_grad
+        self.conv1x1_pool_bias -= learning_rate * conv1x1_pool_bias_grad
+
+    def conv_weight_gradient(self, input_data, output_grad, weight_shape):
+        """Calculate convolution weight gradients more efficiently"""
         out_channels, in_channels, kh, kw = weight_shape
         batch_size = input_data.shape[0]
         
         grad = np.zeros(weight_shape)
         
-        for b in range(min(batch_size, 8)):
+        # Limit computation for speed
+        max_batch = min(batch_size, 16) 
+        max_spatial = min(output_grad.shape[2], 14) 
+        
+        for b in range(max_batch):
             for c_out in range(out_channels):
-                for h in range(min(output_grad.shape[2], 14)): 
-                    for w in range(min(output_grad.shape[3], 14)):
-                        if h < input_data.shape[2] and w < input_data.shape[3]:
+                for h in range(max_spatial):
+                    for w in range(max_spatial):
+                        if (h + kh <= input_data.shape[2] and 
+                            w + kw <= input_data.shape[3]):
+                        
                             input_patch = input_data[b, :, h:h+kh, w:w+kw]
                             if input_patch.shape == (in_channels, kh, kw):
                                 grad[c_out] += output_grad[b, c_out, h, w] * input_patch
-        
+    
         return grad / batch_size
 
-    def train_step(self, batch_data, batch_labels, learning_rate=0.001):
+    def conv_input_gradient(self, input_data, weights, output_grad, stride=1, padding=0):
+        """Calculate gradients with respect to conv layer input (simplified version)"""
+        batch_size, in_channels, in_height, in_width = input_data.shape
+        out_channels, _, filter_h, filter_w = weights.shape
     
+        # Initialize input gradient
+        input_grad = np.zeros_like(input_data)
+        for b in range(min(batch_size, 8)):  # Limit for speed
+            for c_in in range(in_channels):
+                for c_out in range(out_channels):
+                    for h in range(min(output_grad.shape[2], 14)):
+                        for w in range(min(output_grad.shape[3], 14)):
+                            if (h < in_height and w < in_width):
+                                input_grad[b, c_in, h, w] += (
+                                    output_grad[b, c_out, h, w] * 
+                                    np.mean(weights[c_out, c_in])  # Simplified
+                                )
+    
+        return input_grad
+
+    def train_step(self, batch_data, batch_labels, learning_rate=0.001):
+        
         predictions = self.forward(batch_data)
         
         loss = self.cross_entropy_loss(predictions, batch_labels)

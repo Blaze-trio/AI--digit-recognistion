@@ -49,9 +49,7 @@ def main():
     train_data = train_data[:, np.newaxis, :, :]
     test_data = test_data[:, np.newaxis, :, :]
     
-    train_data = train_data[:500] 
-    parser.train_labels = parser.train_labels[:500] 
-
+    
     print(f"Final train_data shape: {train_data.shape}") 
     print(f"Final test_data shape: {test_data.shape}")
 
@@ -95,7 +93,7 @@ def main():
             print(f"Processing batch starting at index {batch_start}...")
             batch_end = min(batch_start + batch_size, len(train_data_shuffled))
             batch_data = train_data_shuffled[batch_start:batch_end]
-            batch_one_hot = train_labels_one_hot[batch_start:batch_end]
+            batch_one_hot = train_labels_one_hot_shuffled[batch_start:batch_end]
 
             loss, acc = cnn.train_step(batch_data, batch_one_hot, learning_rate)
             
