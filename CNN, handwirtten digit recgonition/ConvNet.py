@@ -49,6 +49,9 @@ def main():
     train_data = train_data[:, np.newaxis, :, :]
     test_data = test_data[:, np.newaxis, :, :]
     
+    train_data = train_data[:500] 
+    parser.train_labels = parser.train_labels[:500] 
+
     print(f"Final train_data shape: {train_data.shape}") 
     print(f"Final test_data shape: {test_data.shape}")
 
@@ -59,7 +62,7 @@ def main():
     cnn = InceptionCNN(input_channels=1, num_classes=10)
 
     #hyperparameters
-    batch_size = 32
+    batch_size = 16
     num_epochs = 3
     learning_rate = 0.01
 
@@ -103,7 +106,7 @@ def main():
             #Update progress bar
             batch_progress.set_postfix({
                 'Loss': f'{loss:.4f}',
-                'Acc': f'{acc:.4f}',
+                'Acc': f'{acc:.2%}',
                 'Batch': f'{num_batches}'
             })
 
