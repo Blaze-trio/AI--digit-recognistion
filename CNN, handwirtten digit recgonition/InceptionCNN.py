@@ -273,7 +273,7 @@ class InceptionCNN:
         self.conv1x1_5x5_weights -= learning_rate * conv1x1_5x5_grad
         self.conv1x1_5x5_bias -= learning_rate * conv1x1_5x5_bias_grad
 
-        pool_output = self.cache['pool']  # Input to 1x1_pool conv
+        pool_output = self.cache['pool']  
         conv1x1_pool_grad = self.conv_weight_gradient(pool_output, dL_pool_out, self.conv1x1_pool_weights.shape)
         conv1x1_pool_bias_grad = np.mean(dL_pool_out, axis=(0, 2, 3))
     
@@ -319,7 +319,7 @@ class InceptionCNN:
                             if (h < in_height and w < in_width):
                                 input_grad[b, c_in, h, w] += (
                                     output_grad[b, c_out, h, w] * 
-                                    np.mean(weights[c_out, c_in])  # Simplified
+                                    np.mean(weights[c_out, c_in])  
                                 )
     
         return input_grad
