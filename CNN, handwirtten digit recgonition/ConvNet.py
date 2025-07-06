@@ -61,7 +61,7 @@ def main():
     #hyperparameters
     batch_size = 32
     num_epochs = 3
-    learning_rate = 0.001
+    learning_rate = 0.01
 
     training_history = {
         'epoch_losses': [],
