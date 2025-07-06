@@ -110,12 +110,17 @@ def main():
         avg_loss = epoch_loss / num_batches
         avg_accuracy = epoch_accuracy / num_batches
         epoch_time = time.time() - epoch_start
+
         training_history['epoch_losses'].append(avg_loss)
         training_history['epoch_accuracies'].append(avg_accuracy)
         training_history['training_time'].append(epoch_time)
 
         print(f"Epoch {epoch + 1} completed in {epoch_time:.2f}s")
         print(f"Average Loss: {avg_loss:.4f}, Average Accuracy: {avg_accuracy:.4f}")
+
+        if epoch > 0 and avg_loss > training_history['epoch_losses'][-2]:
+            learning_rate *= 0.9
+            print(f"Reduced learning rate to {learning_rate:.4f}")
 
     total_time = time.time() - start_time
     print(f"\nTotal training time: {total_time:.2f}s")
