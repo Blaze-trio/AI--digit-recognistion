@@ -50,7 +50,7 @@ class MNISTDataParser:
         
         return self.test_data
 
-        def normalize_data(self):
+    def normalize_data(self):
         """Normalize pixel values to range [0, 1]"""
         if self.train_data is not None:
             self.train_data = self.train_data / 255.0

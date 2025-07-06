@@ -20,25 +20,26 @@ class InceptionCNN:
         return fan_in, fan_out
 
     def initialize_weights(self):
+        print("\nInitializing weights for InceptionCNN")
         # 1X1 convolution layer
         fan_in, fan_out = self.calculate_conv_fan_in_out(self.input_channels, 32, 1, 1)
         self.conv1x1_weights = self.xavier_uniform(fan_in,fan_out, (32,self.input_channels, 1, 1))
         self.conv1x1_bias = np.zeros((32,))
 
         # 3X3 convolution layer
-        fan_in, fan_out = self.calculate_conv_fan_in_out(self.input_channels,32, 1, 1)
-        self.conv1x1_3x3_weights = self.xavier_uniform(fan_in, fan_out, (32, self.input_channels, 1, 1))
-        self.conv1x1_3x3_bias = np.zeros((32,))
-        fan_in, fan_out = self.calculate_conv_fan_in_out(self.input_channels, 32, 3, 3)
-        self.conv3x3_weights = self.xavier_uniform(fan_in, fan_out, (32, self.input_channels, 3, 3))
+        fan_in, fan_out = self.calculate_conv_fan_in_out(self.input_channels,16, 1, 1)
+        self.conv1x1_3x3_weights = self.xavier_uniform(fan_in, fan_out, (16, self.input_channels, 1, 1))
+        self.conv1x1_3x3_bias = np.zeros((16,))
+        fan_in, fan_out = self.calculate_conv_fan_in_out(16, 32, 3, 3)
+        self.conv3x3_weights = self.xavier_uniform(fan_in, fan_out, (32, 16, 3, 3))
         self.conv3x3_bias = np.zeros((32,))
 
         # 5X5 convolution layer
-        fan_in, fan_out = self.calculate_conv_fan_in_out(self.input_channels, 32, 1, 1)
-        self.conv1x1_5x5_weights = self.xavier_uniform(fan_in, fan_out, (32, self.input_channels, 1, 1))
-        self.conv1x1_5x5_bias = np.zeros((32,))
-        fan_in, fan_out = self.calculate_conv_fan_in_out(self.input_channels, 32, 5, 5)
-        self.conv5x5_weights = self.xavier_uniform(fan_in, fan_out, (32, self.input_channels, 5, 5))
+        fan_in, fan_out = self.calculate_conv_fan_in_out(self.input_channels, 8, 1, 1)
+        self.conv1x1_5x5_weights = self.xavier_uniform(fan_in, fan_out, (8, self.input_channels, 1, 1))
+        self.conv1x1_5x5_bias = np.zeros((8,))
+        fan_in, fan_out = self.calculate_conv_fan_in_out(8, 32, 5, 5)
+        self.conv5x5_weights = self.xavier_uniform(fan_in, fan_out, (32, 8, 5, 5))
         self.conv5x5_bias = np.zeros((32,))
 
         # max pooling layer
@@ -51,16 +52,18 @@ class InceptionCNN:
         fc_output_size = self.num_classes
 
         fan_in, fan_out = fc_input_size, fc_output_size
-        self.fc_weights = self.xavier_uniform(fan_in, fan_out, (fc_output_size, fc_input_size))
+        self.fc_weights = self.xavier_uniform(fan_in, fan_out, (fc_input_size, fc_output_size))
         self.fc_bias = np.zeros((fc_output_size,))
     
     def pad_input(self, inputData, padding):
+        print("\npad_input")
         batchSize, channels, height, width = inputData.shape
         padded = np.zeros((batchSize, channels, height + 2*padding, width + 2*padding))
-        padded[:, :, padding:height+padding, padding:width+padding] = input_data
+        padded[:, :, padding:height+padding, padding:width+padding] = inputData
         return padded
     
     def conv2d(self, inputData, weights, bias, stride=1, padding=0):
+        print("\nconv2d")
         if padding > 0:
             inputData = self.pad_input(inputData, padding)
 
@@ -88,6 +91,7 @@ class InceptionCNN:
         return np.maximum(0, x)
     
     def max_pool2d(self, inputData, poolSize=2, stride=2, padding=0):
+        print("\nmax_pool2d")
         if padding > 0:
             inputData = self.pad_input(inputData, padding)
 
@@ -110,6 +114,7 @@ class InceptionCNN:
         return output
 
     def inception_block(self, inputData):
+        print("\ninception_block")
         # 1x1 convolution
         conv1x1 = self.conv2d(inputData, self.conv1x1_weights, self.conv1x1_bias)
         conv1x1 = self.relu(conv1x1)
@@ -118,19 +123,19 @@ class InceptionCNN:
         conv3x3 = self.conv2d(inputData, self.conv1x1_3x3_weights, self.conv1x1_3x3_bias)
         conv3x3 = self.relu(conv3x3)
         padding = int((3 - 1) / 2)#same padding
-        conv3x3 = self.conv2d(conv3x3, self.conv3x3_weights, self.conv3x3_bias, padding)
+        conv3x3 = self.conv2d(conv3x3, self.conv3x3_weights, self.conv3x3_bias, padding=1)
         conv3x3 = self.relu(conv3x3)
 
         # 5x5 convolution
         conv5x5 = self.conv2d(inputData, self.conv1x1_5x5_weights, self.conv1x1_5x5_bias)
         conv5x5 = self.relu(conv5x5)
         padding = int((5 - 1) / 2)
-        conv5x5 = self.conv2d(conv5x5, self.conv5x5_weights, self.conv5x5_bias, padding)
+        conv5x5 = self.conv2d(conv5x5, self.conv5x5_weights, self.conv5x5_bias, padding=2)
         conv5x5 = self.relu(conv5x5)
 
         # pooling
         padding = int((3 - 1) / 2)
-        pool = self.max_pool2d(inputData, poolSize=3, stride=1, padding)
+        pool = self.max_pool2d(inputData, poolSize=3, stride=1, padding=1)
         pool = self.conv2d(pool, self.conv1x1_pool_weights, self.conv1x1_pool_bias)
         pool = self.relu(pool)
 
@@ -138,22 +143,25 @@ class InceptionCNN:
         return output
     
     def softmax(self, x):
+        print("\nsoftmax")
         exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
         return exp_x / np.sum(exp_x, axis=1, keepdims=True)
     
     def forward(self, inputData):
+        print("\nforward")
         inputData = self.inception_block(inputData)
 
         batchSize, channels, height, width = inputData.shape
         inputData = inputData.reshape(batchSize, -1)
 
-        inputData = np.dot(inputData, self.fc_weights.T) + self.fc_bias
+        inputData = np.dot(inputData, self.fc_weights) + self.fc_bias
         inputData = self.relu(inputData)
 
         output = self.softmax(inputData)
         return output
 
     def cross_entropy_loss(self, predictions, labels):
+        print("\ncross_entropy_loss")
         batchSize = predictions.shape[0]
         
         epsilon = 1e-12 
@@ -163,6 +171,7 @@ class InceptionCNN:
         return loss
 
     def accuracy(self, predictions, labels):
+        print("\naccuracy")
         predicted_classes = np.argmax(predictions, axis=1)
         true_classes = np.argmax(labels, axis=1)
         accuracy = np.mean(predicted_classes == true_classes)
