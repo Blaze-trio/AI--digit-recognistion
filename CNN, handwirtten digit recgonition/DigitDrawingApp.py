@@ -46,19 +46,19 @@ class DigitDrawingApp:
         self.font_small = pygame.font.Font(None, 24)
         
         self.last_draw_time = 0
-        self.prediction_delay = 500  # milliseconds
+        self.prediction_delay = 500  #milliseconds
     
     def canvas_to_model_input(self):
         """Convert canvas to 28x28 grayscale array for model input"""
         canvas_array = pygame.surfarray.array3d(self.canvas)
-        canvas_array = np.transpose(canvas_array, (1, 0, 2))  # Fix orientation
+        canvas_array = np.transpose(canvas_array, (1, 0, 2))  
         
         gray = cv2.cvtColor(canvas_array, cv2.COLOR_RGB2GRAY)
         resized = cv2.resize(gray, (28, 28), interpolation=cv2.INTER_AREA)
         
         inverted = 255 - resized
         
-        # Normalize to [0, 1]
+
         normalized = inverted.astype(np.float32) / 255.0
         
         return normalized
