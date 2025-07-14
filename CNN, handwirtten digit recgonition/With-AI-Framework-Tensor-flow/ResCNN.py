@@ -170,6 +170,25 @@ def plot_training_history(history):
     plt.tight_layout()
     plt.show()
 
+def create_prediction_wrapper(model_path='resnet50_mnist_model.h5'):
+    """Create a wrapper class that mimics InceptionCNN interface for DigitDrawingApp"""
+    class ResNetWrapper:
+        def __init__(self, model_path):
+            self.model = tf.keras.models.load_model(model_path)
+            print(f"ResNet model loaded from {model_path}")
+        
+        def predict_single(self, image_array):
+            image_batch = image_array.reshape(1, 28, 28, 1)
+    
+            predictions = self.model.predict(image_batch, verbose=0)[0]
+            
+            predicted_digit = np.argmax(predictions)
+            confidence = predictions[predicted_digit]
+            
+            return predicted_digit, confidence, predictions
+    
+    return ResNetWrapper(model_path)
+
 def main():
     print("Starting ResNet50 MNIST Training...")
     
@@ -212,6 +231,13 @@ def main():
     
     model.save('resnet50_mnist_model.h5')
     print("Model saved as 'resnet50_mnist_model.h5'")
+
+    wrapper = create_prediction_wrapper('resnet50_mnist_model.h5')
+    print("✅ Model wrapper created successfully!")
+  
+    test_image = X_val[0]  
+    pred_digit, confidence, predictions = wrapper.predict_single(test_image)
+    print(f"Test prediction: Digit {pred_digit} with {confidence:.2%} confidence")
 
     print("Making predictions on test set...")
     test_predictions = model.predict(X_test)
