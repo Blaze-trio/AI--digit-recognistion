@@ -181,7 +181,7 @@ def create_prediction_wrapper(model_path='resnet50_mnist_model.h5'):
             image_batch = image_array.reshape(1, 28, 28, 1)
     
             predictions = self.model.predict(image_batch, verbose=0)[0]
-            
+
             predicted_digit = np.argmax(predictions)
             confidence = predictions[predicted_digit]
             
@@ -233,7 +233,7 @@ def main():
     print("Model saved as 'resnet50_mnist_model.h5'")
 
     wrapper = create_prediction_wrapper('resnet50_mnist_model.h5')
-    print("✅ Model wrapper created successfully!")
+    print("Model wrapper created successfully!")
   
     test_image = X_val[0]  
     pred_digit, confidence, predictions = wrapper.predict_single(test_image)
